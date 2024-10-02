@@ -1,10 +1,11 @@
-import { Calendar } from "lucide-react";
 
 import { cards } from "@/constants/cards";
+import { Calendar } from "lucide-react";
+import InfoCard from "./_components/info-card";
+
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { day, month } from "@/constants/date";
-import InfoCard from "./_components/info-card";
-import { Button } from "@/components/ui/button";
 import { LoanForm } from "./_components/loan-form";
 import LoansTable from "./_components/loans-table";
 
@@ -24,7 +25,7 @@ export default function Overview() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-zinc-50">Painel</h1>
+        <h1 className="text-3xl font-bold text-zinc-50">Visão geral</h1>
         <div className="flex items-center gap-4">
           <Card className="w-max flex gap-2 items-center border border-zinc-800 h-12 px-4">
             <Calendar />

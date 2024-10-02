@@ -1,6 +1,5 @@
 
 import Header from "./_components/header";
-import { Separator } from "@/components/ui/separator";
 
 export default function PrivateLayout({
 	children,
@@ -10,7 +9,6 @@ export default function PrivateLayout({
 	return (
     <div>
       <Header />
-      <Separator />
       {children}
     </div>
 	);
