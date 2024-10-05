@@ -12,6 +12,7 @@ import { day, month } from "@/constants/date";
 import { components } from "@/constants/menu";
 import { usePathname } from "next/navigation";
 import CategoryForm from "./category-form";
+import EquipmentForm from "./equipment-form";
 
 export default function PageHeader() {
   const pathname = usePathname();
@@ -33,7 +34,8 @@ export default function PageHeader() {
     <div className="p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-zinc-50">
-          { pathname === `/loans/${id}` && "Cautela"
+          { pathname === `/loans/${id}` && "Cautela" 
+            || pathname === `/equipments/${id}` && "Equipamento"
             || components.map((component) => {
               if(component.href === pathname) {
                 return component.title
@@ -58,6 +60,13 @@ export default function PageHeader() {
               </DialogTrigger>
               <CategoryForm />
             </Dialog>
+          ) : pathname === `/equipments` ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="font-medium text-sm h-12">Registrar equipamento</Button>
+                </DialogTrigger>
+                <EquipmentForm />
+              </Dialog>
           ) : null
           }
         </div>
