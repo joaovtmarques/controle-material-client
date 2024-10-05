@@ -28,5 +28,5 @@ export const components: { title: string; href: string; description: string }[] 
     href: "/receivers",
     description:
       "Recebedores registrados",
-  },
+  }
 ]
