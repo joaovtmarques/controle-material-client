@@ -4,9 +4,14 @@ import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { day, month } from "@/constants/date";
 import { components } from "@/constants/menu";
 import { usePathname } from "next/navigation";
+import CategoryForm from "./category-form";
 
 export default function PageHeader() {
   const pathname = usePathname();
@@ -41,9 +46,20 @@ export default function PageHeader() {
             <Calendar />
             <h5 className="font-medium text-sm">{getDate()}</h5>
           </Card>
-          <Button className="font-medium text-sm h-12">
-           Registrar cautela
-          </Button>
+          {
+            pathname === "/loans" || pathname === `/loans/${id}` ? (
+              <Button className="font-medium text-sm h-12">
+                Registrar cautela
+              </Button>
+          ) : pathname === `/categories` ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="font-medium text-sm h-12">Registrar categoria</Button>
+              </DialogTrigger>
+              <CategoryForm />
+            </Dialog>
+          ) : null
+          }
         </div>
       </div>
     </div>
