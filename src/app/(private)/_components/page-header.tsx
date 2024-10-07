@@ -13,6 +13,7 @@ import { components } from "@/constants/menu";
 import { usePathname } from "next/navigation";
 import CategoryForm from "./category-form";
 import EquipmentForm from "./equipment-form";
+import ReceiverForm from "./receiver-form";
 
 export default function PageHeader() {
   const pathname = usePathname();
@@ -67,6 +68,13 @@ export default function PageHeader() {
                 </DialogTrigger>
                 <EquipmentForm />
               </Dialog>
+          ) : pathname === `/receivers` ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="font-medium text-sm h-12">Registrar recebedor</Button>
+              </DialogTrigger>
+              <ReceiverForm />
+            </Dialog>
           ) : null
           }
         </div>
