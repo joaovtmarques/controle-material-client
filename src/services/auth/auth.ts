@@ -17,7 +17,7 @@ export const auth = async ({ email, password, rememberMe }: LoginRequest) => {
     headers: new Headers({ "content-type": "application/json" }),
   });
 
-  const { token } = await response.json();
+  const { token, user } = await response.json();
 
   if (rememberMe) {
     const hours = new Date(
@@ -28,5 +28,5 @@ export const auth = async ({ email, password, rememberMe }: LoginRequest) => {
     Cookie.set("token", token);
   }
 
-  return response;
+  return { token, user };
 };

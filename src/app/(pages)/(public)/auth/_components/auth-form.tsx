@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { auth } from "@/services/auth/auth";
+import { useUserStore } from "@/store/user-store";
 
 type Inputs = {
   email: string
@@ -16,6 +17,8 @@ type Inputs = {
 }
 
 export default function AuthForm() {
+  const setUser = useUserStore(state => state.addUser);
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -26,7 +29,12 @@ export default function AuthForm() {
   } = useForm<Inputs>()
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
-    await auth({...data, rememberMe}).then(() => window.location.reload());
+    await auth({...data, rememberMe}).then(
+      ({user}) => {
+        setUser(user);
+        window.location.reload()
+      }
+    );
     setIsLoading(false);
   }
   
