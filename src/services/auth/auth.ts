@@ -8,7 +8,7 @@ interface LoginRequest {
 }
 
 export const auth = async ({ email, password, rememberMe }: LoginRequest) => {
-  const response = await fetchWrapper<Response>("auth", {
+  const response = await fetchWrapper<Promise<never>>("auth", {
     method: "POST",
     body: JSON.stringify({
       email: email.toString(),
@@ -17,7 +17,7 @@ export const auth = async ({ email, password, rememberMe }: LoginRequest) => {
     headers: new Headers({ "content-type": "application/json" }),
   });
 
-  const { token, user } = await response.json();
+  const { token, user } = response;
 
   if (rememberMe) {
     const hours = new Date(

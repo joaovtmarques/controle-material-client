@@ -8,6 +8,7 @@ export interface Equipment {
   price: string;
   observation: string;
   condition: string;
+  state: string;
   type: string;
   isInCharge: boolean;
   amountOut: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react"
+import { useState, type HTMLAttributes } from "react"
 import { format } from "date-fns"
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { Calendar as CalendarIcon } from "lucide-react"

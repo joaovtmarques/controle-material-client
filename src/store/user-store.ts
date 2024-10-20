@@ -1,29 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import type { User } from "@/shared/models/user";
 import { create } from "zustand";
-
-export interface User {
-  id: number;
-  name: string;
-  warName: string;
-  rank: string;
-  company: string;
-  cpf: string;
-  telephone: string;
-  type: string;
-  email: string;
-  roles: [
-    {
-      id: number;
-      role: string;
-    }
-  ];
-  authorities: [
-    {
-      authority: string;
-    }
-  ];
-  username: string;
-}
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface UserStore {
   user: User;
@@ -31,8 +9,19 @@ interface UserStore {
   removeUser: () => void;
 }
 
-export const useUserStore = create<UserStore>((set) => ({
-  user: {} as User,
-  addUser: (user) => set((_state) => ({ user: user })),
-  removeUser: () => set({ user: {} as User }),
-}));
+export const useUserStore = create<UserStore>()(
+  persist(
+    (set, get) => ({
+      user: {} as User,
+      addUser: (user) => set({ user }),
+      removeUser: () => set({ user: {} as User }),
+    }),
+    {
+      name: "currentUser",
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as User),
+      }),
+    }
+  )
+);

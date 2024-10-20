@@ -10,27 +10,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  TableCell,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import type { Loan } from "@/shared/models/loan"
+import { filterAndSortLoan } from "@/libs/filter-and-sort-loan"
+import { Skeleton } from "@/components/ui/skeleton"
 
-export default function LoansTable() {
+interface LoansTableProps {
+  loans: Loan[]
+}
+
+export default function LoansTable({
+  loans
+}: LoansTableProps) {
+
+  const formattedLoans = filterAndSortLoan(loans);
+
   return (
     <Card
-      className="xl:col-span-2 w-full min-h-[480px] max-h-[480px]" x-chunk="dashboard-01-chunk-4"
+      className="xl:col-span-2 w-full min-h-[480px] max-h-[480px] overflow-hidden" x-chunk="dashboard-01-chunk-4"
     >
       <CardHeader className="flex flex-row items-center">
         <div className="grid gap-2">
           <CardTitle>Cautelas recentes</CardTitle>
           <CardDescription>
-            Foram registradas 27 cautelas neste mês
+            Foram registradas {formattedLoans && formattedLoans.length} cautelas neste mês
           </CardDescription>
         </div>
         <Button asChild size="sm" className="ml-auto gap-1">
@@ -58,86 +70,32 @@ export default function LoansTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Computador Dell I5 8gb</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  Sd Vitor Silva
-                </div>
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                Sale
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                <Badge className="text-xs" variant="outline">
-                  Approved
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                2023-06-23
-              </TableCell>
-              <TableCell className="text-right">22-09-2024</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Computador Dell I5 8gb</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  Sd Vitor Silva
-                </div>
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                Sale
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                <Badge className="text-xs" variant="outline">
-                  Approved
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                2023-06-23
-              </TableCell>
-              <TableCell className="text-right">22-09-2024</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Computador Dell I5 8gb</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  Sd Vitor Silva
-                </div>
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                Sale
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                <Badge className="text-xs" variant="outline">
-                  Approved
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                2023-06-23
-              </TableCell>
-              <TableCell className="text-right">22-09-2024</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <div className="font-medium">Computador Dell I5 8gb</div>
-                <div className="hidden text-sm text-muted-foreground md:inline">
-                  Sd Vitor Silva
-                </div>
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                Sale
-              </TableCell>
-              <TableCell className="hidden xl:table-column">
-                <Badge className="text-xs" variant="outline">
-                  Approved
-                </Badge>
-              </TableCell>
-              <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                2023-06-23
-              </TableCell>
-              <TableCell className="text-right">22-09-2024</TableCell>
-            </TableRow>
+            {loans ? (
+              formattedLoans!.map((loan) => (
+                <TableRow key={loan.id}>
+                  <TableCell>
+                    <div className="font-medium">{loan.equipments?.length === 1 ? loan.equipments[0].name : ""}</div>
+                    <div className="hidden text-sm text-muted-foreground md:inline">
+                      {loan.receiver.rank + " " + loan.receiver.warName}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden xl:table-column">
+                    Sale
+                  </TableCell>
+                  <TableCell className="hidden xl:table-column">
+                    <Badge className="text-xs" variant="outline">
+                      Approved
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
+                    {loan.date}
+                  </TableCell>
+                  <TableCell className="text-right">{loan.date || "Sem informação"}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <Skeleton className="w-full mt-4 h-8 rounded-full animate-pulse bg-zinc-800" />
+            )}
           </TableBody>
         </Table>
       </CardContent>
