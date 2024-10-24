@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, type HTMLAttributes } from "react"
-import { format } from "date-fns"
+import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { Calendar as CalendarIcon } from "lucide-react"
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useState } from "react";
  
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { cn } from "@/libs/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+} from "@/components/ui/popover";
+import { cn } from "@/libs/utils";
 
 export default function DatePicker() {
   const [date, setDate] = useState<Date>()
