@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -43,16 +44,24 @@ export function LoanForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [receiverId, setReceiverId] = useState<string | undefined>();
-  const [lenderId, setLenderId] = useState(user.id);
+  const [lenderId] = useState(user.id);
   const [amount, setAmount] = useState(0);
   const [observation, setObservation] = useState("");
-  const [type, setType] = useState(user.type);
-  const [alteration, setAlteration] = useState(false);
+  const [type] = useState(user.type);
+  const [alteration] = useState(false);
   const [date, setDate] = useState<Date>()
-  const [devolutionDate, setDevolutionDate] = useState();
   const [equipmentsId, setEquipmentsId] = useState<string | undefined>();
 
   const onSubmit = async () => {
+    if (!receiverId || !date || !equipmentsId || !amount || !observation || !type) {
+      toast.error("Preencha todos os campos");
+      return null;
+    }
+    if(amount <= 0) {
+      toast.error("A quantidade deve ser maior que 0");
+      return null;
+    }
+
     setIsLoading(true);
     await addLoan({
       loanData: {
@@ -67,11 +76,21 @@ export function LoanForm() {
       }
     }).then(
       (response) => {
-        console.log(response);
-        window.location.reload()
+        if(response) {
+          toast("Cautela registrada com sucesso.", {
+            description: "Veja todos os detalhes da cautela em 'Cautelas'.",
+            action: {
+              label: "Confirmar",
+              onClick: () => window.location.reload(),
+            },
+          });
+        }
       }
-    );
+    ).catch(error => {
+      toast.error(error.message);
+    });
     setIsLoading(false);
+    
   }
 
   const getReceivers = async (): Promise<Receiver[]> => {
@@ -176,7 +195,9 @@ export function LoanForm() {
                 </SelectContent>
               </Select>
             </div>
-          <Button onClick={() => onSubmit()} className="w-full">
+          <Button onClick={() => {
+            onSubmit()
+          }} className="w-full">
             {isLoading ? <LoaderIcon className="animate-spin" /> : "Registrar cautela"}
           </Button>
         </div>

@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { Inter } from "@next/font/google";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   weight: ['400', '500', '700', '900'],
@@ -26,6 +27,7 @@ export default async function RootLayout({
 				className={`${inter.className} dark select-none`}>
 				<link rel="icon" href="/images/favicon.ico" sizes="any" />
 				{children}
+				<Toaster theme="dark" />
 			</body>
 		</html>
 	);

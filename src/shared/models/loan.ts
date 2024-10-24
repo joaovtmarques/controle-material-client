@@ -1,6 +1,7 @@
 import type { Equipment } from "./equipment";
 import type { Item } from "./item";
 import type { Lender } from "./lender";
+import type { LoanDoc } from "./loan-doc";
 import type { Receiver } from "./receiver";
 
 export interface Loan {
@@ -16,4 +17,5 @@ export interface Loan {
   lender: Lender;
   items: Item[] | null | [];
   equipments: Equipment[] | null | [];
+  loanDoc: LoanDoc | null;
 }
