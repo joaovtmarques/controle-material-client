@@ -6,8 +6,7 @@ export async function fetchWrapper<T = unknown>(
 ) {
   let result;
 
-  // await fetch(`http://3.143.225.109:8080/api/${input}`, init).then(
-  await fetch(`http://localhost:8080/api/${input}`, init).then(
+  await fetch(`http://3.143.225.109:8080/api/${input}`, init).then(
     async (response) => {
       if (response.status === 403) {
         Cookie.remove("token");
