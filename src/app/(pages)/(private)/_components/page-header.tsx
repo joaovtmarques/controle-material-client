@@ -59,7 +59,7 @@ export default function PageHeader() {
               <DialogTrigger asChild>
                 <Button className="font-medium text-sm h-12">Registrar categoria</Button>
               </DialogTrigger>
-              <CategoryForm />
+              <CategoryForm categoryType="CREATE" />
             </Dialog>
           ) : pathname === `/equipments` ? (
               <Dialog>
