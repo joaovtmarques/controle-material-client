@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -23,8 +25,22 @@ import {
 import {
   MoreHorizontal
 } from "lucide-react";
+import type { Receiver } from "@/shared/models/receiver";
+import { findAllReceivers } from "@/services/receivers/find-all-receivers";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Receivers() {
+
+  const getReceivers = async (): Promise<Receiver[]> => {
+    const response = await findAllReceivers();
+    return response;
+  }
+
+  const receiversQuery = useQuery({
+    queryKey: ['receivers'],
+    queryFn: getReceivers
+  });
+
   return (
     <div className="p-8">
       <main className="grid flex-1 items-start gap-4 py-4 px-2 md:gap-8">
@@ -50,44 +66,46 @@ export default function Receivers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">
-                    João Vitor da Silva Marques
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">Sd EP</Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    Vitor Silva
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    CCAp
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    52267935880
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    12992446221
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem>Excluir recebedor</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                {receiversQuery.data && receiversQuery.data?.map((receiver) => (
+                  <TableRow key={receiver.id}>
+                    <TableCell className="font-medium">
+                      {receiver.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{receiver.rank}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {receiver.warName}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {receiver.company}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {receiver.cpf}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {receiver.telephone}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem>Excluir recebedor</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>

@@ -1,0 +1,16 @@
+export const ranks = [
+  "Cel",
+  "TC",
+  "Maj",
+  "Cap",
+  "1 Ten",
+  "Ten",
+  "Asp",
+  "S Ten",
+  "1 Sgt",
+  "2 Sgt",
+  "3 Sgt",
+  "Cb",
+  "Sd EP",
+  "Sd EV",
+];
