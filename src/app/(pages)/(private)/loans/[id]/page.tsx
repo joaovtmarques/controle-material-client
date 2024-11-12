@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { findLoanById } from "@/services/loan/find-loan-by-id";
+import { getDownloadLink } from "@/services/loan/get-download-link";
 import { updateLoan } from "@/services/loan/update-loan";
 import type { Loan } from "@/shared/models/loan";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +22,7 @@ export default function Loan() {
   const [status, setStatus] = useState(false);
   const [price, setPrice] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [downloadIsLoading, setDownloadIsLoading] = useState(false);
 
   const getLoan = async (): Promise<Loan | null> => {
     const response = await findLoanById({ id: Number(params.id) });
@@ -32,13 +34,45 @@ export default function Loan() {
     queryFn: getLoan,
   });
 
+  const getLink = async ({ filePath }: { filePath: string }) => {
+    try {
+      setDownloadIsLoading(true);
+      const response = (await getDownloadLink({ filePath })) as unknown as Blob;
+
+      const downloadUrl = window.URL.createObjectURL(response); // Certificando-se de que é um Blob
+
+      // Cria um link de ancoragem e dispara o download
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filePath.split("/").pop() || "download"; // Definindo o nome do arquivo
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Libera o objeto URL após o download
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      alert("Erro ao fazer o download: " + error);
+    } finally {
+      setDownloadIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (loanQuery.data) {
       setStatus(loanQuery.data.status === "FECHADO");
       setAlteration(loanQuery.data.alteration);
-      
-      const actualPrice = loanQuery.data.equipments!.reduce((acc, equipment) => acc + Number(equipment.price), 0);
-      setPrice(actualPrice.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' }));
+
+      const actualPrice = loanQuery.data.equipments!.reduce(
+        (acc, equipment) => acc + Number(equipment.price),
+        0
+      );
+      setPrice(
+        actualPrice.toLocaleString("pt-br", {
+          style: "currency",
+          currency: "BRL",
+        })
+      );
     }
   }, [loanQuery.data]);
 
@@ -51,46 +85,59 @@ export default function Loan() {
       status: updatedStatus,
       alteration,
     })
-    .then((response) => {
-      setIsLoading(false);
-      if (response) {
-        toast("Cautela atualizada com sucesso.", {
-          description: "Clique em confirmar para atualizar a página e ver as mudanças.",
-          action: {
-            label: "Confirmar",
-            onClick: () => window.location.reload(),
-          },
-        });
-      }
-    })
-    .catch(error => {
-      toast.error(error.message);
-    });
-  }
+      .then((response) => {
+        setIsLoading(false);
+        if (response) {
+          toast("Cautela atualizada com sucesso.", {
+            description:
+              "Clique em confirmar para atualizar a página e ver as mudanças.",
+            action: {
+              label: "Confirmar",
+              onClick: () => window.location.reload(),
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      });
+  };
 
   return (
     <div className="p-8 flex gap-16">
       <div className="w-auto flex flex-col gap-4">
         <Button onClick={handleUpdateLoan}>
-        {isLoading ? <LoaderIcon className="animate-spin" /> : "Salvar"}
+          {isLoading ? <LoaderIcon className="animate-spin" /> : "Salvar"}
         </Button>
-        <Button className="border bg-transparent text-zinc-400 hover:bg-primary hover:text-background" 
-                onClick={() => loanQuery.data?.loanDoc?.filePath && window.open(loanQuery.data.loanDoc.filePath)}>
-          Fazer download
+        <Button
+          className="border bg-transparent text-zinc-400 hover:bg-primary hover:text-background"
+          onClick={() =>
+            getLink({ filePath: loanQuery!.data!.loanDoc!.filePath })
+          }
+        >
+          {downloadIsLoading ? (
+            <LoaderIcon className="animate-spin" />
+          ) : (
+            "Fazer download"
+          )}
         </Button>
       </div>
       <div className="w-auto flex flex-col gap-4">
         <header>
-          {loanQuery.data ? 
-            <h3 className="font-medium text-lg text-zinc-50">{loanQuery.data.equipments![0].name}</h3>
-            :
+          {loanQuery.data ? (
+            <h3 className="font-medium text-lg text-zinc-50">
+              {loanQuery.data.equipments![0].name}
+            </h3>
+          ) : (
             <Skeleton className="w-1/3 h-6 rounded-full animate-pulse bg-zinc-800" />
-          }
-          {loanQuery.data ? 
-            <h5 className="font-normal text-sm text-zinc-400">Sem observação</h5>
-            :
+          )}
+          {loanQuery.data ? (
+            <h5 className="font-normal text-sm text-zinc-400">
+              Sem observação
+            </h5>
+          ) : (
             <Skeleton className="w-1/3 h-4 mt-4 rounded-full animate-pulse bg-zinc-800" />
-          }
+          )}
         </header>
         <Separator />
         <div className="flex gap-4">
@@ -98,40 +145,81 @@ export default function Loan() {
             <Card className="flex flex-col p-6 gap-6">
               <div>
                 <h3 className="font-medium text-base text-zinc-50">Cautela</h3>
-                <h5 className="font-normal text-xs text-zinc-400">Atualize informações sobre a cautela</h5>
+                <h5 className="font-normal text-xs text-zinc-400">
+                  Atualize informações sobre a cautela
+                </h5>
               </div>
               <div className="flex items-center justify-between gap-x-4">
                 <div>
-                  <h3 className="font-medium text-base text-zinc-50 flex gap-x-4 items-center">Status - {loanQuery.data ? loanQuery.data.status : <Skeleton className="w-1/3 h-6 rounded-full animate-pulse bg-zinc-800" />}</h3>
-                  <h5 className="font-normal text-xs text-zinc-400">Se o material já foi devolvido ou não será<br /> devolvido, marque a cautela como FECHADO.</h5>
+                  <h3 className="font-medium text-base text-zinc-50 flex gap-x-4 items-center">
+                    Status -{" "}
+                    {loanQuery.data ? (
+                      loanQuery.data.status
+                    ) : (
+                      <Skeleton className="w-1/3 h-6 rounded-full animate-pulse bg-zinc-800" />
+                    )}
+                  </h3>
+                  <h5 className="font-normal text-xs text-zinc-400">
+                    Se o material já foi devolvido ou não será
+                    <br /> devolvido, marque a cautela como FECHADO.
+                  </h5>
                 </div>
-                <Switch onCheckedChange={(checked) => setStatus(checked)} checked={status} />
+                <Switch
+                  onCheckedChange={(checked) => setStatus(checked)}
+                  checked={status}
+                />
               </div>
               <div className="flex items-center justify-between gap-x-4">
                 <div>
-                  <h3 className="font-medium text-base text-zinc-50">Alteração</h3>
-                  <h5 className="font-normal text-xs text-zinc-400">Marque se houve alteração com o equipamento<br /> na descautela do material.</h5>
+                  <h3 className="font-medium text-base text-zinc-50">
+                    Alteração
+                  </h3>
+                  <h5 className="font-normal text-xs text-zinc-400">
+                    Marque se houve alteração com o equipamento
+                    <br /> na descautela do material.
+                  </h5>
                 </div>
-                <Switch onCheckedChange={(checked) => setAlteration(checked)} checked={alteration} />
+                <Switch
+                  onCheckedChange={(checked) => setAlteration(checked)}
+                  checked={alteration}
+                />
               </div>
             </Card>
             <Card className="flex flex-col p-6 gap-6">
               <div>
-                <h3 className="font-medium text-base text-zinc-50">Responsáveis</h3>
-                <h5 className="font-normal text-xs text-zinc-400">Quem registrou a cautela e quem recebeu</h5>
+                <h3 className="font-medium text-base text-zinc-50">
+                  Responsáveis
+                </h3>
+                <h5 className="font-normal text-xs text-zinc-400">
+                  Quem registrou a cautela e quem recebeu
+                </h5>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <Avatar>
-                    <AvatarFallback>{loanQuery.data && loanQuery.data.lender.warName.split(" ").length > 1 ? loanQuery.data.lender.warName.split(" ")[0][0] + loanQuery.data.lender.warName.split(" ")[1][0] : loanQuery.data && loanQuery.data.lender.warName.split(" ")[0][0]}</AvatarFallback>
+                    <AvatarFallback>
+                      {loanQuery.data &&
+                      loanQuery.data.lender.warName.split(" ").length > 1
+                        ? loanQuery.data.lender.warName.split(" ")[0][0] +
+                          loanQuery.data.lender.warName.split(" ")[1][0]
+                        : loanQuery.data &&
+                          loanQuery.data.lender.warName.split(" ")[0][0]}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     {loanQuery.isLoading ? (
                       <Skeleton className="w-full rounded-full animate-pulse bg-zinc-400" />
                     ) : (
                       <div>
-                          <h3 className="font-medium text-base text-zinc-50">{loanQuery.data && loanQuery.data.lender.rank + " " + loanQuery.data.lender.warName}</h3>
-                          <h5 className="font-normal text-xs text-zinc-400">{loanQuery.data && loanQuery.data.lender.company}</h5>
+                        <h3 className="font-medium text-base text-zinc-50">
+                          {loanQuery.data &&
+                            loanQuery.data.lender.rank +
+                              " " +
+                              loanQuery.data.lender.warName}
+                        </h3>
+                        <h5 className="font-normal text-xs text-zinc-400">
+                          {loanQuery.data && loanQuery.data.lender.company}
+                        </h5>
                       </div>
                     )}
                   </div>
@@ -143,14 +231,30 @@ export default function Loan() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <Avatar>
-                    <AvatarFallback>{loanQuery.data && loanQuery.data.receiver.warName.split(" ").length > 1 ? loanQuery.data && loanQuery.data.receiver.warName.split(" ")[0][0] + loanQuery.data && loanQuery.data.receiver.warName.split(" ")[1][0] : loanQuery.data && loanQuery.data.receiver.warName.split(" ")[0][0]}</AvatarFallback>
+                    <AvatarFallback>
+                      {loanQuery.data &&
+                      loanQuery.data.receiver.warName.split(" ").length > 1
+                        ? loanQuery.data &&
+                          loanQuery.data.receiver.warName.split(" ")[0][0] +
+                            loanQuery.data &&
+                          loanQuery.data.receiver.warName.split(" ")[1][0]
+                        : loanQuery.data &&
+                          loanQuery.data.receiver.warName.split(" ")[0][0]}
+                    </AvatarFallback>
                   </Avatar>
                   {loanQuery.isLoading ? (
                     <Skeleton className="w-full rounded-full animate-pulse bg-zinc-400" />
                   ) : (
                     <div>
-                      <h3 className="font-medium text-base text-zinc-50">{loanQuery.data && loanQuery.data.receiver.rank + " " + loanQuery.data.receiver.warName}</h3>
-                      <h5 className="font-normal text-xs text-zinc-400">{loanQuery.data && loanQuery.data.receiver.company}</h5>
+                      <h3 className="font-medium text-base text-zinc-50">
+                        {loanQuery.data &&
+                          loanQuery.data.receiver.rank +
+                            " " +
+                            loanQuery.data.receiver.warName}
+                      </h3>
+                      <h5 className="font-normal text-xs text-zinc-400">
+                        {loanQuery.data && loanQuery.data.receiver.company}
+                      </h5>
                     </div>
                   )}
                 </div>
@@ -164,7 +268,11 @@ export default function Loan() {
             <Card className="w-full h-auto flex flex-col gap-2 items-center p-4">
               <div className="w-full flex items-center justify-between">
                 <h1 className="font-medium text-sm">
-                  Equipamento - {loanQuery.data && loanQuery.data.equipments![0].isInCharge ? "CARGA" : "FORA DE CARGA"} - {loanQuery.data && loanQuery.data.equipments![0].condition}
+                  Equipamento -{" "}
+                  {loanQuery.data && loanQuery.data.equipments![0].isInCharge
+                    ? "CARGA"
+                    : "FORA DE CARGA"}{" "}
+                  - {loanQuery.data && loanQuery.data.equipments![0].condition}
                 </h1>
               </div>
               <div className="w-full">
@@ -176,24 +284,45 @@ export default function Loan() {
                 {loanQuery.isLoading ? (
                   <Skeleton className="w-full h-4 mt-2 rounded-full animate-pulse bg-zinc-800" />
                 ) : (
-                  <p className="font-regular text-zinc-400 text-xs">{loanQuery.data && loanQuery.data.equipments![0].serialNumber}</p>
+                  <p className="font-regular text-zinc-400 text-xs">
+                    {loanQuery.data &&
+                      loanQuery.data.equipments![0].serialNumber}
+                  </p>
                 )}
               </div>
             </Card>
             <Card className="w-full h-auto flex flex-col gap-2 items-center p-4">
               <div className="w-full flex items-center justify-between">
                 <h1 className="font-medium text-sm flex items-center gap-x-4">
-                  Cautela: {loanQuery.data ? loanQuery.data.date : <Skeleton className="w-full h-4 rounded-full animate-pulse bg-zinc-800" />}
+                  Cautela:{" "}
+                  {loanQuery.data ? (
+                    loanQuery.data.date
+                  ) : (
+                    <Skeleton className="w-full h-4 rounded-full animate-pulse bg-zinc-800" />
+                  )}
                 </h1>
               </div>
               <div className="w-full">
-                <h3 className="font-bold text-2xl">{loanQuery.isLoading ? <Skeleton className="w-full h-8 rounded-full animate-pulse bg-zinc-800 mb-2" /> : loanQuery.data!.status}</h3>
-                <p className="font-regular text-zinc-400 text-xs">Devolução: {loanQuery.data && loanQuery.data.devolutionDate && loanQuery.data && loanQuery.data.devolutionDate || "Não prevista"}</p>
+                <h3 className="font-bold text-2xl">
+                  {loanQuery.isLoading ? (
+                    <Skeleton className="w-full h-8 rounded-full animate-pulse bg-zinc-800 mb-2" />
+                  ) : (
+                    loanQuery.data!.status
+                  )}
+                </h3>
+                <p className="font-regular text-zinc-400 text-xs">
+                  Devolução:{" "}
+                  {(loanQuery.data &&
+                    loanQuery.data.devolutionDate &&
+                    loanQuery.data &&
+                    loanQuery.data.devolutionDate) ||
+                    "Não prevista"}
+                </p>
               </div>
             </Card>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
