@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   DialogContent,
   DialogDescription,
@@ -9,6 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -17,12 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/libs/utils";
 import { findAllCategories } from "@/services/categories/find-all-categories";
 import { addEquipment } from "@/services/equipment/add-equipment";
 import type { Category } from "@/shared/models/category";
 import { useUserStore } from "@/store/user-store";
 import { useQuery } from "@tanstack/react-query";
-import { LoaderIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
+import { CalendarIcon, LoaderIcon } from "lucide-react";
 import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -38,6 +47,9 @@ interface Inputs {
   categoryId: string;
   isTemporary: string;
   owner: string;
+  lender: string;
+  receiver: string;
+  loanDate: string;
 }
 
 export default function EquipmentForm() {
@@ -45,6 +57,7 @@ export default function EquipmentForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isInCharge, setIsInCharge] = useState("NAO");
+  const [date, setDate] = useState<Date>();
 
   const getCategories = async (): Promise<Category[]> => {
     const response = await findAllCategories({ userType: user!.type });
@@ -59,33 +72,59 @@ export default function EquipmentForm() {
   const { register, handleSubmit, control } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
-    await addEquipment({
-      ...data,
-      categoryId: Number(data.categoryId),
-      amount: Number(data.amount),
-      isInCharge: isInCharge === "SIM" ? true : false,
-      isTemporary: data.isTemporary === "SIM" ? true : false,
-      amountOut: 0,
-      type: user!.type,
-      state: "EM_ESTOQUE",
-      owner: data.owner ? data.owner : user!.type,
-    })
-      .then((response) => {
-        setIsLoading(false);
-        if (response) {
-          toast("Equipamento criado com sucesso.", {
-            description:
-              "Clique em confirmar para atualizar a página e ver as mudanças.",
-            action: {
-              label: "Confirmar",
-              onClick: () => window.location.reload(),
-            },
-          });
-        }
+    if (
+      data.name &&
+      data.amount &&
+      data.serialNumber &&
+      data.price &&
+      data.observation &&
+      data.condition &&
+      data.isInCharge &&
+      data.categoryId &&
+      user.type &&
+      data.categoryId &&
+      data.owner &&
+      data.isTemporary &&
+      data.lender &&
+      data.receiver
+    ) {
+      await addEquipment({
+        ...data,
+        categoryId: Number(data.categoryId),
+        amount: Number(data.amount),
+        isInCharge: isInCharge === "SIM" ? true : false,
+        isTemporary: data.isTemporary === "SIM" ? true : false,
+        amountOut: 0,
+        type: user!.type,
+        state: "EM_ESTOQUE",
+        owner: data.owner ? data.owner : user!.type,
+        lender: data.lender,
+        receiver: data.receiver,
+        loanDate: date
+          ? format(date!, "dd-MM-yyyy", { locale: ptBR })
+          : "Data inválida",
       })
-      .catch((error) => {
-        toast.error(error.message);
-      });
+        .then((response) => {
+          setIsLoading(false);
+          if (response) {
+            toast("Equipamento criado com sucesso.", {
+              description:
+                "Clique em confirmar para atualizar a página e ver as mudanças.",
+              action: {
+                label: "Confirmar",
+                onClick: () => window.location.reload(),
+              },
+            });
+          }
+        })
+        .catch((error) => {
+          setIsLoading(false);
+          toast.error(error.message);
+        });
+    } else {
+      setIsLoading(false);
+      toast.error("Preencha todos os campos.");
+    }
   };
 
   return (
@@ -185,11 +224,66 @@ export default function EquipmentForm() {
             </Select>
           </div>
           {isInCharge === "NAO" && (
-            <div className="flex flex-col gap-4">
-              <Label htmlFor="name" className="text-left">
-                Dono do equipamento (Ex: 12º Cia Com Amv)?
-              </Label>
-              <Input {...register("owner")} id="owner" className="col-span-3" />
+            <div>
+              <div className="flex flex-col gap-4">
+                <Label htmlFor="owner" className="text-left">
+                  Dono do equipamento (Ex: 12º Cia Com Amv)?
+                </Label>
+                <Input
+                  {...register("owner")}
+                  id="owner"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="flex flex-col gap-4">
+                <Label htmlFor="lender" className="text-left">
+                  Responsável pela cautela
+                </Label>
+                <Input
+                  {...register("lender")}
+                  id="lender"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="flex flex-col gap-4">
+                <Label htmlFor="receiver" className="text-left">
+                  Quem recebeu o equipamento?
+                </Label>
+                <Input
+                  {...register("receiver")}
+                  id="receiver"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="devolutionDate">Data de cautela</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? (
+                        format(date, "PPP", { locale: ptBR })
+                      ) : (
+                        <span>Selecione uma data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           )}
           <div className="flex flex-col gap-4">
