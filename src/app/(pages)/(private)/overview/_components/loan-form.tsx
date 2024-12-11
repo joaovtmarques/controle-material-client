@@ -24,7 +24,7 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/libs/utils";
 import { findAllEquipments } from "@/services/equipment/find-all-equipments";
@@ -35,12 +35,13 @@ import type { Receiver } from "@/shared/models/receiver";
 import { useUserStore } from "@/store/user-store";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ptBR } from 'date-fns/locale/pt-BR';
+import { ptBR } from "date-fns/locale/pt-BR";
 import { Calendar as CalendarIcon, LoaderIcon } from "lucide-react";
 import { useState } from "react";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 export function LoanForm() {
-  const user = useUserStore(state => state.user);
+  const user = useUserStore((state) => state.user);
 
   const [isLoading, setIsLoading] = useState(false);
   const [receiverId, setReceiverId] = useState<string | undefined>();
@@ -49,15 +50,22 @@ export function LoanForm() {
   const [observation, setObservation] = useState("");
   const [type] = useState(user.type);
   const [alteration] = useState(false);
-  const [date, setDate] = useState<Date>()
-  const [equipmentsId, setEquipmentsId] = useState<string | undefined>();
+  const [date, setDate] = useState<Date>();
+  const [equipmentsId, setEquipmentsId] = useState<string[] | undefined>();
 
   const onSubmit = async () => {
-    if (!receiverId || !date || !equipmentsId || !amount || !observation || !type) {
+    if (
+      !receiverId ||
+      !date ||
+      !equipmentsId ||
+      !amount ||
+      !observation ||
+      !type
+    ) {
       toast.error("Preencha todos os campos");
       return null;
     }
-    if(amount <= 0) {
+    if (amount <= 0) {
       toast.error("A quantidade deve ser maior que 0");
       return null;
     }
@@ -72,11 +80,13 @@ export function LoanForm() {
         receiverId: parseInt(receiverId!),
         alteration,
         devolutionDate: format(date!, "dd-MM-yyyy", { locale: ptBR }),
-        equipmentsId: [parseInt(equipmentsId!)]
-      }
-    }).then(
-      (response) => {
-        if(response) {
+        equipmentsId: equipmentsId
+          ? equipmentsId.map((id) => parseInt(id))
+          : [],
+      },
+    })
+      .then((response) => {
+        if (response) {
           toast("Cautela registrada com sucesso.", {
             description: "Veja todos os detalhes da cautela em 'Cautelas'.",
             action: {
@@ -85,23 +95,22 @@ export function LoanForm() {
             },
           });
         }
-      }
-    ).catch(error => {
-      toast.error(error.message);
-    });
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      });
     setIsLoading(false);
-    
-  }
+  };
 
   const getReceivers = async (): Promise<Receiver[]> => {
     const response = await findAllReceivers();
     return response;
-  }
+  };
 
   const getEquipments = async (): Promise<Equipment[]> => {
     const response = await findAllEquipments({ userType: user!.type });
     return response;
-  }
+  };
 
   const receiversQuery = useQuery({
     queryKey: ["receivers"],
@@ -125,29 +134,46 @@ export function LoanForm() {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="receiver">Recebedor</Label>
-              <Select value={receiverId} onValueChange={(value: string | undefined) => setReceiverId(value)}>
+              <Select
+                value={receiverId}
+                onValueChange={(value: string | undefined) =>
+                  setReceiverId(value)
+                }
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um recebedor" />
                 </SelectTrigger>
-                <SelectContent id="receiver" >
+                <SelectContent id="receiver">
                   <SelectGroup>
                     <SelectLabel>Recebedor</SelectLabel>
-                    {receiversQuery.data && receiversQuery.data.map((receiver) => (
-                      <SelectItem value={receiver.id.toString()} key={receiver.id}>{receiver.rank+" "+receiver.warName}</SelectItem>
-                    ))}
+                    {receiversQuery.data &&
+                      receiversQuery.data.map((receiver) => (
+                        <SelectItem
+                          value={receiver.id.toString()}
+                          key={receiver.id}
+                        >
+                          {receiver.rank + " " + receiver.warName}
+                        </SelectItem>
+                      ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="amount">Quantidade</Label>
-              <Input onChange={value => setAmount(parseInt(value.target.value))} id="amount" placeholder="Exemplo: 1" required type="number" />
+              <Input
+                onChange={(value) => setAmount(parseInt(value.target.value))}
+                id="amount"
+                placeholder="Exemplo: 1"
+                required
+                type="number"
+              />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="observation">Observação</Label>
             <Input
-              onChange={value => setObservation(value.target.value)}
+              onChange={(value) => setObservation(value.target.value)}
               id="observation"
               type="text"
               placeholder="Adicione uma observação"
@@ -166,7 +192,11 @@ export function LoanForm() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP",  { locale: ptBR }) : <span>Selecione uma data</span>}
+                  {date ? (
+                    format(date, "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -180,28 +210,44 @@ export function LoanForm() {
             </Popover>
           </div>
           <div className="grid gap-2">
-              <Label htmlFor="equipment">Equipamento</Label>
-              <Select value={equipmentsId} onValueChange={(value: string | undefined) => setEquipmentsId(value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione um equipamento" />
-                </SelectTrigger>
-                <SelectContent id="equipment">
-                  <SelectGroup>
-                    <SelectLabel>Equipamento/Material</SelectLabel>
-                    {equipmentsQuery.data && equipmentsQuery.data.map((equipment) => (
-                      <SelectItem value={equipment.id.toString()} key={equipment.id}>{equipment.name}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          <Button onClick={() => {
-            onSubmit()
-          }} className="w-full">
-            {isLoading ? <LoaderIcon className="animate-spin" /> : "Registrar cautela"}
+            <Label htmlFor="equipment">Equipamento</Label>
+            <MultiSelect
+              options={
+                equipmentsQuery.data?.map((equipment) => {
+                  return {
+                    label:
+                      equipment.name +
+                      "-" +
+                      "SN(" +
+                      equipment.serialNumber +
+                      ")",
+                    value: equipment.id.toString(),
+                  };
+                }) ?? []
+              }
+              value={equipmentsId}
+              onValueChange={(values: string[] | undefined) =>
+                setEquipmentsId(values)
+              }
+              placeholder="Selecione um equipamento"
+              variant="inverted"
+              animation={2}
+            />
+          </div>
+          <Button
+            onClick={() => {
+              onSubmit();
+            }}
+            className="w-full"
+          >
+            {isLoading ? (
+              <LoaderIcon className="animate-spin" />
+            ) : (
+              "Registrar cautela"
+            )}
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

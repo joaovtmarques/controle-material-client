@@ -9,7 +9,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  navigationMenuTriggerStyle
+  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { components } from "@/constants/menu";
 import { usePathname } from "next/navigation";
@@ -17,9 +17,12 @@ import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { Separator } from "@/components/ui/separator";
+import { useUserStore } from "@/store/user-store";
 
 export default function Header() {
-  const pathname = usePathname();  
+  const pathname = usePathname();
+
+  const user = useUserStore((state) => state.user);
 
   return (
     <>
@@ -27,17 +30,28 @@ export default function Header() {
         <div className="flex items-center gap-4">
           <Card className="w-max flex gap-2 items-center border border-zinc-800 h-12 px-4">
             <div className="h-5 w-5 rounded-full bg-green-400"></div>
-            <h4 className="font-medium text-sm">João Vitor</h4>
+            <h4 className="font-medium text-sm">
+              {user.rank + " " + user.warName}
+            </h4>
           </Card>
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
                 {components.map((component, index) => (
-                  <Link href={component.href} legacyBehavior passHref key={index}>
+                  <Link
+                    href={component.href}
+                    legacyBehavior
+                    passHref
+                    key={index}
+                  >
                     <NavigationMenuLink
                       className={
-                        navigationMenuTriggerStyle() + 
-                        `text-sm font-medium ${pathname === component.href ? "text-zinc-50" : "text-zinc-400"}`
+                        navigationMenuTriggerStyle() +
+                        `text-sm font-medium ${
+                          pathname === component.href
+                            ? "text-zinc-50"
+                            : "text-zinc-400"
+                        }`
                       }
                     >
                       {component.title}
@@ -49,16 +63,19 @@ export default function Header() {
           </NavigationMenu>
         </div>
         <div className="flex items-center gap-4">
-          <Input 
-            placeholder="Buscar..."
-            className="w-72 h-12"
-          />
+          <Input placeholder="Buscar..." className="w-72 h-12" />
           <Avatar>
-            <AvatarFallback>JV</AvatarFallback>
+            <AvatarFallback>
+              {user.warName
+                .split(" ")
+                .map((word) => word[0])
+                .join("")
+                .toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </div>
       </header>
       <Separator />
     </>
-  )
+  );
 }
