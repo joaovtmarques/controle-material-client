@@ -14,6 +14,8 @@ interface AddEquipmentRequest {
   type: string;
   state: string;
   amountOut: number;
+  owner: string;
+  isTemporary: boolean;
 }
 
 export const addEquipment = async ({
@@ -28,6 +30,8 @@ export const addEquipment = async ({
   type,
   state,
   amountOut,
+  owner,
+  isTemporary,
 }: AddEquipmentRequest) => {
   const response = await fetchWrapper<Promise<Loan>>(`equipments`, {
     method: "POST",
@@ -43,6 +47,8 @@ export const addEquipment = async ({
       type,
       state,
       amountOut,
+      owner,
+      isTemporary,
     }),
     headers: new Headers({
       "content-type": "application/json",

@@ -4,7 +4,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { findAllCategories } from "@/services/categories/find-all-categories";
 import { addEquipment } from "@/services/equipment/add-equipment";
@@ -36,57 +36,62 @@ interface Inputs {
   condition: string;
   isInCharge: string;
   categoryId: string;
+  isTemporary: string;
+  owner: string;
 }
 
 export default function EquipmentForm() {
   const user = useUserStore((state) => state.user);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isInCharge, setIsInCharge] = useState("NAO");
 
   const getCategories = async (): Promise<Category[]> => {
     const response = await findAllCategories({ userType: user!.type });
     return response;
-  }
+  };
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
   });
 
-  const {
-    register,
-    handleSubmit,
-    control
-  } = useForm<Inputs>();
+  const { register, handleSubmit, control } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
     await addEquipment({
       ...data,
       categoryId: Number(data.categoryId),
       amount: Number(data.amount),
-      isInCharge: data.isInCharge === "SIM" ? true : false,
+      isInCharge: isInCharge === "SIM" ? true : false,
+      isTemporary: data.isTemporary === "SIM" ? true : false,
       amountOut: 0,
       type: user!.type,
-      state: "EM_ESTOQUE"
-    }).then((response) => {
-      setIsLoading(false);
-      if (response) {
-        toast("Equipamento criado com sucesso.", {
-          description: "Clique em confirmar para atualizar a página e ver as mudanças.",
-          action: {
-            label: "Confirmar",
-            onClick: () => window.location.reload(),
-          },
-        });
-      }
+      state: "EM_ESTOQUE",
+      owner: data.owner ? data.owner : user!.type,
     })
-    .catch(error => {
-      toast.error(error.message);
-    });
-  }
+      .then((response) => {
+        setIsLoading(false);
+        if (response) {
+          toast("Equipamento criado com sucesso.", {
+            description:
+              "Clique em confirmar para atualizar a página e ver as mudanças.",
+            action: {
+              label: "Confirmar",
+              onClick: () => window.location.reload(),
+            },
+          });
+        }
+      })
+      .catch((error) => {
+        toast.error(error.message);
+      });
+  };
 
   return (
-    <DialogContent className={"sm:max-w-[425px] overflow-y-scroll max-h-screen"}>
+    <DialogContent
+      className={"sm:max-w-[425px] overflow-y-scroll max-h-screen"}
+    >
       <DialogHeader>
         <DialogTitle>Adicionar equipamento</DialogTitle>
         <DialogDescription>
@@ -99,11 +104,7 @@ export default function EquipmentForm() {
             <Label htmlFor="name" className="text-left">
               Nome do equipamento
             </Label>
-            <Input
-              {...register("name")}
-              id="name"
-              className="col-span-3"
-            />
+            <Input {...register("name")} id="name" className="col-span-3" />
           </div>
           <div className="flex flex-col gap-4">
             <Label htmlFor="amount" className="text-left">
@@ -130,11 +131,7 @@ export default function EquipmentForm() {
             <Label htmlFor="price" className="text-left">
               Preço
             </Label>
-            <Input
-              {...register("price")}
-              id="price"
-              className="col-span-3"
-            />
+            <Input {...register("price")} id="price" className="col-span-3" />
           </div>
           <div className="flex flex-col gap-4">
             <Label htmlFor="observation" className="text-left">
@@ -167,30 +164,34 @@ export default function EquipmentForm() {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-            )} />
+              )}
+            />
           </div>
           <div className="flex flex-col gap-4">
             <Label htmlFor="name" className="text-left">
               Está em carga?
             </Label>
-            <Controller
-              control={control}
-              name="isInCharge"
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} {...field}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Está em carga?" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Está em carga?</SelectLabel>
-                      <SelectItem value="SIM">SIM</SelectItem>
-                      <SelectItem value="NAO">NAO</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-            )} />
+            <Select onValueChange={setIsInCharge}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Está em carga?" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Está em carga?</SelectLabel>
+                  <SelectItem value="SIM">SIM</SelectItem>
+                  <SelectItem value="NAO">NAO</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
+          {isInCharge === "NAO" && (
+            <div className="flex flex-col gap-4">
+              <Label htmlFor="name" className="text-left">
+                Dono do equipamento (Ex: 12º Cia Com Amv)?
+              </Label>
+              <Input {...register("owner")} id="owner" className="col-span-3" />
+            </div>
+          )}
           <div className="flex flex-col gap-4">
             <Label htmlFor="name" className="text-left">
               Categoria
@@ -206,21 +207,32 @@ export default function EquipmentForm() {
                   <SelectContent>
                     <SelectGroup>
                       <SelectLabel>Selecione uma categoria</SelectLabel>
-                      {categoriesQuery.data && categoriesQuery.data?.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>
-                      ))}
+                      {categoriesQuery.data &&
+                        categoriesQuery.data?.map((category) => (
+                          <SelectItem
+                            key={category.id}
+                            value={category.id.toString()}
+                          >
+                            {category.name}
+                          </SelectItem>
+                        ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-            )} />
+              )}
+            />
           </div>
         </div>
         <DialogFooter>
           <Button type="submit">
-            {isLoading ? <LoaderIcon className="mr-2 h-4 w-4 animate-spin" /> : "Salvar"}
+            {isLoading ? (
+              <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              "Salvar"
+            )}
           </Button>
         </DialogFooter>
       </form>
-    </DialogContent>  
-  )
+    </DialogContent>
+  );
 }
