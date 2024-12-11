@@ -11,6 +11,11 @@ export interface Equipment {
   state: string;
   type: string;
   isInCharge: boolean;
+  owner?: string;
+  isTemporary: boolean;
   amountOut: number;
   category: Category;
+  lender: string;
+  receiver: string;
+  loanDate: string;
 }
